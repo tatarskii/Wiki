@@ -41,6 +41,6 @@ class Parser:
         pass
 
 
-tmp = Parser()
-for i in tmp.pars():
-    print(i)
+#tmp = Parser()
+#for i in tmp.pars():
+    #print(i)
