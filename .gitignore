@@ -300,6 +300,5 @@ pyvenv.cfg
 pip-selfcheck.json
 
 1.py
-parser.py
 .idea
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,venv,python
