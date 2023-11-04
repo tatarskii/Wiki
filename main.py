@@ -1,4 +1,6 @@
-from parser import *
+from test import *
+#from parser import *
 
 tmp = GetPageLinks()
-print(tmp.get_links_dict())
+print(tmp.find_links_in_div_with_id())
+print(tmp.find_ref_links_in_col())
