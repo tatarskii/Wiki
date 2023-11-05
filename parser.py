@@ -1,85 +1,58 @@
+import requests
+import url_checker
 from bs4 import BeautifulSoup
-from url_checker import html_get
 
 
-class GetPageLinks:
+class WebsiteParser:
     def __init__(self):
-        self.links_dict = {}
-        self.div_id = 'mw-content-text'
-        self.div_class = 'reflist reflist-columns references-column-width'
-        self.div_sup_id = 'reference'
 
-    def find_links_in_div_with_id(self):
-        bs = BeautifulSoup(html_get(), 'html.parser')
-        link_list = []
-        title_list = []
+        self.class_names = ['mw-redirect', None]
+        self.sub_class = ['reference', 'mw-hidden-catlinks', 'extiw']
 
+    def parse_website(self):
         try:
-            # Find all links in body container
-            finded_div = bs.find('div', id=self.div_id)
+            response = requests.get(url_checker.start_page_check())
 
-            if finded_div:
-                for link in finded_div.find_all('a'):
-                    url = link.get("href")
-                    title = link.get("title")
-                    if url not in link_list:
-                        link_list.append(url)
-                        title_list.append(title)
+            bs = BeautifulSoup(response.text, 'html.parser')
 
-                return link_list, title_list
+            # Find the div with id "bodyContent"
+            body_div = bs.find('div', id='bodyContent')
 
-        except Exception as e:
-            print(e)
+            def custom_filter(tag):
+                if (
+                        tag.name == 'a' and
+                        ('class' in tag.attrs and any(cls in tag['class'] for cls in self.class_names))
+                        or ('class' in tag.attrs and any(cls in tag['class'] for cls in ['another_class']))
+                        or ('class' not in tag.attrs)
+                ):
+                    # Exclude links that contain "self.sup_name"
+                    if (tag.find('sup', class_=self.sub_class)
+                            or ('extiw' in tag.get('class', [])
+                            or ('This article is semi-protected.' in tag.get('title', [])))):
+                        return False
 
-    def find_ref_links(self):
-        bs = BeautifulSoup(html_get(), 'html.parser')
-        link_list = []
-        title_list = []
+                    # Exclude links in div_id = "mw-hidden-catlinks"
+                    excluded_div = tag.find_parent('div', id='mw-hidden-catlinks')
+                    if excluded_div is not None:
+                        return False
+                    return True
+                return False
 
-        try:
-            # Find links in reference col
-            finded_class = bs.find('div', class_=self.div_class)
+            filtered_links = body_div.find_all(custom_filter)
 
-            if finded_class:
-                for link in finded_class.find_all('a'):
-                    url = link.get("href")
-                    title = link.get("title")
-                    if url not in link_list:
-                        link_list.append(url)
-                        title_list.append(title)
-
-                return link_list, title_list
-
-        except Exception as e:
-            print(e)
-
-    def find_ref_links_in_text(self):
-        bs = BeautifulSoup(html_get(), 'html.parser')
-        link_list = []
-        title_list = []
+            # Create a dict of {href: title} for found links
+            links_dict = {link.get('href', ''): link.get('title', '') for link in filtered_links}
+            return links_dict
 
 
-        try:
-            # Find reference link in body container
-            finded_ref_sup = bs.find('sup', class_=self.div_sup_id)
 
-            if finded_ref_sup:
-                for link in finded_ref_sup.find_all('a'):
-                    url = link.get("href")
-                    title = link.get("title")
-                    if title not in title_list:
-                        link_list.append(url)
-                        title_list.append(title)
+        except requests.RequestException as e:
+            print('An error occurred while making the request:', str(e))
+            return {}
 
-                return link_list, title_list
 
-        except Exception as e:
-            print(e)
+website_parser = WebsiteParser()
+parsed_links = website_parser.parse_website()
 
-    def get_links_dict(self, div_class=None):
-        if div_class is not None:
-            self.div_id = div_class
-        link_list, title_list = self.find_links_in_div_with_id()
-        self.links_dict = {url: title for url, title in zip(link_list, title_list)}
-        return self.links_dict
-
+for href, title in parsed_links.items():
+    print(f'Link: {href}, Title: {title}')
