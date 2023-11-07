@@ -72,5 +72,8 @@ class WebsiteParser:
 website_parser = WebsiteParser()
 parsed_links = website_parser.parse_website()
 
+with open('parsed_links.json', 'w') as f:
+    json.dump(parsed_links, f)
+
 for href, title in parsed_links.items():
     print(f'Link: {href}, Title: {title}')
