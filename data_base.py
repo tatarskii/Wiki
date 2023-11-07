@@ -1,6 +1,8 @@
 import sqlite3
+import json
 
-
+with open('parsed_links.json', 'r') as f:
+    parsed_links = json.load(f)
 def connect():
     connection = sqlite3.connect('test.db')
     cursor = connection.cursor()
@@ -47,4 +49,4 @@ class DataBase:
     pass
 
 
-print(read())
+print(into())
