@@ -10,10 +10,12 @@ class WebsiteParser:
         self.class_names = ['mw-redirect', None]
         self.sub_class = ['reference', 'mw-hidden-catlinks', 'extiw']
 
-    def parse_website(self):
-        try:
-            response = requests.get(url_checker.start_page_check())
+    def parse_website(self, url, depth):  # DO NOT CHANGE DEPTH!!!
+        print(f"Starting to parse {url} at depth {depth}")
 
+
+        try:
+            response = requests.get(url)
             bs = BeautifulSoup(response.text, 'html.parser')
 
             # Find the div with id "bodyContent"
@@ -41,7 +43,6 @@ class WebsiteParser:
                     if navigation_div is not None:
                         return False
 
-
                     # Exclude links by start of the url
                     if (
                             tag.get('href', '').startswith('#cite')
@@ -62,6 +63,15 @@ class WebsiteParser:
 
             # Create a dict of {href: title} for found links
             links_dict = {link.get('href', ''): link.get('title', '') for link in filtered_links}
+
+            if depth > 1:
+                new_links = {}
+                for link in list(links_dict.keys()):
+                    if link.startswith('/wiki'):
+                        child_url = 'https://en.wikipedia.org' + link
+                        new_links[link] = self.parse_website(child_url, depth - 1)
+                links_dict.update(new_links)
+
             return links_dict
 
         except requests.RequestException as e:
